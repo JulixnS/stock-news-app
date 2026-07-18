@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import yfinance as yf
-from helper import title_contains
+from sources.helper import title_contains
 
 
 # Blueprint for all scrapers
@@ -19,7 +19,7 @@ class YahooScraper(NewsScraper):
         
     def fetch(self, t: str, n: int) -> list:
         
-        urls = [] #list of news articles to be returned
+        pages = [] #list of news articles to be returned
         
         ticker = yf.Ticker(t)
         news = ticker.get_news(count = n)
@@ -28,9 +28,13 @@ class YahooScraper(NewsScraper):
             title = article.get("content").get("title")
 
             if(title_contains(title, t, ticker.info.get("longName"))):
-                 urls.append(article.get("content").get("canonicalUrl").get("url"))
+                 pages.append(
+                      {"url": article.get("content").get("canonicalUrl").get("url"),
+                       "title": title,
+                       "summary": article.get("content").get("summary", "")
+                      })
 
-        return urls
+        return pages
             
             
              
