@@ -8,8 +8,10 @@ def ticker_sentiment(ticker: str, scraper: NewsScraper) -> dict:
     sentiment = {"ticker": ticker, "articles": pages}
 
     count = 0
-    for page in pages:
-        result = finbert(page.get("title") + "." + page.get("summary"), truncation=True)[0]
+    for i in range(len(pages)):
+        result = finbert(pages[i].get("title") + "." + pages[i].get("summary"), truncation=True)[0]
+        pages[i]["score"] = result["score"]
+        pages[i]["label"] = result["label"]
         if result.get("label") == "positive":
             count += result.get("score")
         elif result.get("label") == "negative":
@@ -20,13 +22,13 @@ def ticker_sentiment(ticker: str, scraper: NewsScraper) -> dict:
     sentiment["score"] = total_score 
     
     if total_score >= 0.15:
-        sentiment["rating"] = "bullish"
+        sentiment["label"] = "bullish"
     elif total_score <= -0.15:
-        sentiment["rating"] = "bearish"
+        sentiment["label"] = "bearish"
     else:
-        sentiment["rating"] = "neutral"
+        sentiment["label"] = "neutral"
     
-    return sentiment
+    return sentiment   #{ticker, articles, score, label}
 
 
 if __name__ == "__main__":
