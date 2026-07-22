@@ -1,3 +1,7 @@
 .venv/
 __pycache__/
+sources/__pycache__/
 .claude/
+graphify-out/
+stock-sentiment-project.md
+*.db
