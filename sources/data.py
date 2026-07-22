@@ -62,5 +62,31 @@ def read(ticker: str):
     con.execute("PRAGMA foreign_keys = ON")
     cur =  con.cursor()
 
-    cur.execute("SELECT * FROM sentiments WHERE ticker = ? ORDER BY time DESC LIMIT 1", (ticker,))
-    return cur.fetchall()
+    res = cur.execute("SELECT * FROM sentiments WHERE ticker = ? ORDER BY time DESC LIMIT 1", (ticker,)).fetchall()
+    con.close()
+    return res
+
+def get_latest_id(ticker: str):
+    con = sqlite3.connect("database.db")
+    cur = con.cursor()
+
+    res = cur.execute("SELECT * FROM sentiments WHERE ticker = ? ORDER BY id DESC LIMIT 1", (ticker,)).fetchall()[0]
+    id = res[0]
+    
+    con.close()
+    return id
+
+
+def get_articles(ticker: str, label: str = None):
+    con = sqlite3.connect("database.db")
+    con.execute("PRAGMA foreign_keys = ON")
+    cur = con.cursor()
+    latest_id = get_latest_id(ticker)
+
+    if label is None:
+        res = cur.execute("SELECT * FROM articles WHERE sentiments_id = ?", (latest_id,)).fetchall()
+    else:
+        res = cur.execute("SELECT * FROM articles WHERE sentiments_id = ? AND label = ?", (latest_id, label)).fetchall()
+    con.close()
+
+    return res
