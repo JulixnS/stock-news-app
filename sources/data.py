@@ -33,6 +33,19 @@ def init_db():
     
     con.commit()
     con.close()
+    print("Database Initialized")
+
+def clear_db():
+    con = sqlite3.connect("database.db")
+    cur = con.cursor()
+
+    cur.execute("DELETE FROM articles")      # children FIRST
+    cur.execute("DELETE FROM sentiments")    # then parents
+    cur.execute("DELETE FROM sqlite_sequence")  # reset AUTOINCREMENT counters
+
+    con.commit()
+    con.close()
+    print("Database Cleared")
 
 
 
@@ -56,6 +69,7 @@ def store_sentiment(sentiment: dict) -> int:
 
     con.commit()
     con.close()
+    print(f'{sentiment["ticker"]} inserted.')
 
 def read(ticker: str):
     con = sqlite3.connect("database.db")
