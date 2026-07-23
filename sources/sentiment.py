@@ -2,9 +2,11 @@ from transformers import pipeline
 from sources.scrapers import YahooScraper, NewsScraper
 
 
-def ticker_sentiment(ticker: str, scraper: NewsScraper) -> dict:
-    finbert = pipeline("text-classification", model="ProsusAI/finbert")
-    pages = scraper.fetch("AAPL", 100)
+def ticker_sentiment(ticker: str, scraper: NewsScraper, finbert) -> dict:
+    pages = scraper.fetch(ticker, 100)
+    if len(pages) == 0:
+        return None
+
     sentiment = {"ticker": ticker, "articles": pages}
 
     count = 0
@@ -32,6 +34,6 @@ def ticker_sentiment(ticker: str, scraper: NewsScraper) -> dict:
 
 
 if __name__ == "__main__":
-    scraper = YahooScraper()
-    print(ticker_sentiment("AAPL", scraper))
+    finbert = pipeline("text-classification", model="ProsusAI/finbert")
+    print(ticker_sentiment("AAPL", YahooScraper(), finbert))
     
