@@ -13,3 +13,7 @@ def get_data(ticker: str):
 @app.get("/tickers/{ticker}/articles")
 def articles(ticker, label: str | None = None):
     return get_articles(ticker, label)
+
+@app.get("/picks")
+def picks(limit:int = 10):
+    return top_k_tickers(limit)
