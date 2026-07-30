@@ -5,3 +5,5 @@ sources/__pycache__/
 graphify-out/
 stock-sentiment-project.md
 *.db
+PRODUCT.md
+DESIGN.md
