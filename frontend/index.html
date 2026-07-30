@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sentiment Standings</title>
+  <meta name="description" content="A daily league table of news-sentiment across AI, semiconductor, data-center and cloud stocks." />
+  <link rel="stylesheet" href="/styles.css?v=3" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead__brand">
+      <h1 class="masthead__title">Sentiment&nbsp;Standings</h1>
+      <p class="masthead__tagline">The day's news, ranked by conviction.</p>
+    </div>
+    <div class="masthead__meta">
+      <p class="masthead__date">Latest run<br /><span id="run-date" class="masthead__date-value">—</span></p>
+      <label class="control">
+        <span class="control__label">Table depth</span>
+        <select id="limit" class="control__select" aria-label="Number of tickers to show">
+          <option value="10">Top 10</option>
+          <option value="15" selected>Top 15</option>
+          <option value="25">Top 25</option>
+          <option value="50">Top 50</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <main class="sheet">
+    <form class="search" id="search" role="search">
+      <label class="search__label" for="search-input">Look up any ticker</label>
+      <div class="search__row">
+        <input id="search-input" class="search__input" type="text" placeholder="e.g. NVDA"
+               autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Ticker symbol" />
+        <button class="search__btn" type="submit">Search</button>
+      </div>
+    </form>
+
+    <section id="search-panel" class="search-panel" hidden aria-live="polite">
+      <div class="search-panel__head">
+        <h2 class="search-panel__title">Search result</h2>
+        <button class="search-panel__clear" type="button" id="search-clear">Back to standings ✕</button>
+      </div>
+      <div class="detail"><div class="detail__inner"></div></div>
+    </section>
+
+    <div class="standings" role="table" aria-label="Sentiment standings" aria-busy="true">
+      <div class="standings__head" role="row">
+        <span class="col-rank" role="columnheader">#</span>
+        <span class="col-ticker" role="columnheader">Ticker</span>
+        <span class="col-sentiment" role="columnheader">Net sentiment</span>
+        <span class="col-form" role="columnheader">Form <em>bull · neutral · bear</em></span>
+        <span class="col-cov" role="columnheader">Articles</span>
+      </div>
+      <div id="board" class="standings__body"><!-- rows injected here --></div>
+    </div>
+
+    <p class="legend">
+      <span class="legend__item"><i class="swatch swatch--bull"></i>Bullish&nbsp;(+)</span>
+      <span class="legend__item"><i class="swatch swatch--neutral"></i>Neutral</span>
+      <span class="legend__item"><i class="swatch swatch--bear"></i>Bearish&nbsp;(−)</span>
+      <span class="legend__note">Net score is the average signed article sentiment; the form bar breaks each ticker's articles into bull / neutral / bear.</span>
+    </p>
+  </main>
+
+  <footer class="colophon">
+    <span>FinBERT-scored from Yahoo Finance headlines · sentiment, not investment advice.</span>
+  </footer>
+
+  <template id="row-template">
+    <div class="row" role="row" tabindex="0" aria-expanded="false">
+      <span class="col-rank" role="cell"><span class="rank"></span></span>
+      <span class="col-ticker" role="cell">
+        <span class="ticker"></span>
+        <span class="label-tag"></span>
+      </span>
+      <span class="col-sentiment" role="cell">
+        <span class="gauge">
+          <span class="gauge__baseline"></span>
+          <span class="gauge__fill"></span>
+        </span>
+        <span class="score"></span>
+      </span>
+      <span class="col-form" role="cell">
+        <span class="form" role="img"></span>
+      </span>
+      <span class="col-cov" role="cell"><span class="cov"></span></span>
+    </div>
+  </template>
+
+  <script src="/app.js?v=3" type="module"></script>
+</body>
+</html>
