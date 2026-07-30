@@ -74,9 +74,23 @@ def store_sentiment(sentiment: dict) -> int:
 def read(ticker: str):
     con = sqlite3.connect("database.db")
     con.execute("PRAGMA foreign_keys = ON")
+    con.row_factory = sqlite3.Row          # rows behave like dicts -> named JSON
     cur =  con.cursor()
 
-    res = cur.execute("SELECT * FROM sentiments WHERE ticker = ? ORDER BY time DESC LIMIT 1", (ticker,)).fetchall()
+    row = cur.execute("SELECT * FROM sentiments WHERE ticker = ? ORDER BY time DESC LIMIT 1", (ticker,)).fetchone()
+
+    if row is None:
+        con.close()
+        return None
+
+    articles = con.execute("""
+        SELECT * FROM articles WHERE sentiments_id = ? ORDER BY score DESC
+    """, (row["id"],)).fetchall()
+    
+    res = dict(row)
+    res["coverage"] = [dict(a) for a in articles]
+
+
     con.close()
     return res
 
@@ -94,13 +108,39 @@ def get_latest_id(ticker: str):
 def get_articles(ticker: str, label: str = None):
     con = sqlite3.connect("database.db")
     con.execute("PRAGMA foreign_keys = ON")
+    con.row_factory = sqlite3.Row          # rows behave like dicts -> named JSON
     cur = con.cursor()
     latest_id = get_latest_id(ticker)
 
     if label is None:
-        res = cur.execute("SELECT * FROM articles WHERE sentiments_id = ?", (latest_id,)).fetchall()
+        res = cur.execute("SELECT * FROM articles WHERE sentiments_id = ? ORDER BY score DESC", (latest_id,)).fetchall()
     else:
-        res = cur.execute("SELECT * FROM articles WHERE sentiments_id = ? AND label = ?", (latest_id, label)).fetchall()
+        res = cur.execute("SELECT * FROM articles WHERE sentiments_id = ? AND label = ? ORDER BY score DESC", (latest_id, label)).fetchall()
     con.close()
 
-    return res
+    return [dict(r) for r in res]
+
+def top_k_tickers(k: int = 5, min_articles: int = 5):
+    con = sqlite3.connect("database.db")
+    con.row_factory = sqlite3.Row          # rows behave like dicts -> named JSON
+    cur = con.cursor()
+    # For each ticker's latest run: the aggregate score plus the per-article
+    # label breakdown (pos/neg/neu) that the board renders as a form bar.
+    res = cur.execute("""
+        WITH latest AS (
+            SELECT ticker, MAX(id) AS id FROM sentiments GROUP BY ticker
+        )
+        SELECT s.ticker, s.score, s.label, s.articles, s.time,
+               SUM(CASE WHEN a.label = 'positive' THEN 1 ELSE 0 END) AS pos,
+               SUM(CASE WHEN a.label = 'negative' THEN 1 ELSE 0 END) AS neg,
+               SUM(CASE WHEN a.label = 'neutral'  THEN 1 ELSE 0 END) AS neu
+        FROM sentiments s
+        JOIN latest l ON s.id = l.id
+        LEFT JOIN articles a ON a.sentiments_id = s.id
+        WHERE s.articles >= ?
+        GROUP BY s.id
+        ORDER BY s.score DESC
+        LIMIT ?
+    """, (min_articles, k)).fetchall()
+    con.close()
+    return [dict(r) for r in res]
