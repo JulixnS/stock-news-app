@@ -1,9 +1,11 @@
 .venv/
 __pycache__/
 sources/__pycache__/
+sources/pipeline.py
 .claude/
 graphify-out/
 stock-sentiment-project.md
 *.db
 PRODUCT.md
 DESIGN.md
+sources/pipeline.py
