@@ -1,8 +1,13 @@
+import os
 import sqlite3
 from datetime import datetime, timezone
 
+# Database location. Defaults to the historical relative path so nothing
+# changes for local runs; override in systemd/Docker with an absolute path.
+DB_PATH = os.environ.get("DB_PATH", "database.db")
+
 def init_db():
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect(DB_PATH)
     con.execute("PRAGMA foreign_keys = ON")
     cur = con.cursor()
 
@@ -36,7 +41,7 @@ def init_db():
     print("Database Initialized")
 
 def clear_db():
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
 
     cur.execute("DELETE FROM articles")      # children FIRST
@@ -51,7 +56,7 @@ def clear_db():
 
 
 def store_sentiment(sentiment: dict) -> int:
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect(DB_PATH)
     con.execute("PRAGMA foreign_keys = ON")
     cur = con.cursor()
     cur.execute("""
@@ -72,7 +77,7 @@ def store_sentiment(sentiment: dict) -> int:
     print(f'{sentiment["ticker"]} inserted.')
 
 def read(ticker: str):
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect(DB_PATH)
     con.execute("PRAGMA foreign_keys = ON")
     con.row_factory = sqlite3.Row          # rows behave like dicts -> named JSON
     cur =  con.cursor()
@@ -95,7 +100,7 @@ def read(ticker: str):
     return res
 
 def get_latest_id(ticker: str):
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
 
     res = cur.execute("SELECT * FROM sentiments WHERE ticker = ? ORDER BY id DESC LIMIT 1", (ticker,)).fetchall()[0]
@@ -106,7 +111,7 @@ def get_latest_id(ticker: str):
 
 
 def get_articles(ticker: str, label: str = None):
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect(DB_PATH)
     con.execute("PRAGMA foreign_keys = ON")
     con.row_factory = sqlite3.Row          # rows behave like dicts -> named JSON
     cur = con.cursor()
@@ -121,11 +126,9 @@ def get_articles(ticker: str, label: str = None):
     return [dict(r) for r in res]
 
 def top_k_tickers(k: int = 5, min_articles: int = 5):
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row          # rows behave like dicts -> named JSON
     cur = con.cursor()
-    # For each ticker's latest run: the aggregate score plus the per-article
-    # label breakdown (pos/neg/neu) that the board renders as a form bar.
     res = cur.execute("""
         WITH latest AS (
             SELECT ticker, MAX(id) AS id FROM sentiments GROUP BY ticker
@@ -144,3 +147,4 @@ def top_k_tickers(k: int = 5, min_articles: int = 5):
     """, (min_articles, k)).fetchall()
     con.close()
     return [dict(r) for r in res]
+
