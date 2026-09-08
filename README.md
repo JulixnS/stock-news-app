@@ -83,10 +83,6 @@ uvicorn app:app --reload
 
 Then open **http://127.0.0.1:8000/**.
 
-> **Note:** `requirements.txt` covers serving the dashboard (FastAPI, Uvicorn,
-> yfinance). Regenerating sentiment data with FinBERT additionally needs
-> `transformers` and `torch`, which are large and are installed separately.
-
 ### Project layout
 
 ```
