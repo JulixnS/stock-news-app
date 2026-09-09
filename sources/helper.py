@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 # Legal-entity noise that appears in yfinance longName but never in headlines.
 _SUFFIX = r"(?:Inc|Corp|Corporation|Company|Co|Ltd|Limited|plc|LLC|LP|Holdings|Group|New|AG|SE|NV|SA)"
@@ -80,3 +81,12 @@ def title_contains(title: str, ticker: str, name=None) -> bool:
         return any(_name_matches(title, n) for n in names)
 
     return False
+
+def _to_iso_date(d: str) -> str:
+    """Accept '2026-07-15' or '7/15/26' and return 'YYYY-MM-DD'."""
+    for fmt in ("%Y-%m-%d", "%m/%d/%y", "%m/%d/%Y"):
+        try:
+            return datetime.strptime(d.strip(), fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    raise ValueError(f"Unrecognized date: {d!r}")

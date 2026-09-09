@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from sources.data import *
+
 
 app = FastAPI()
 
@@ -16,6 +17,16 @@ def articles(ticker: str, label: str | None = None):
 @app.get("/picks")
 def picks(limit: int = 10):
     return top_k_tickers(limit)
+
+@app.get("/tickers/{ticker}/history")
+def history(ticker, since: str | None = None):
+    try:
+        return get_history(ticker, since)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"'{since}' is not a valid date. Use YYYY-MM-DD (eg. 2026-07-15), or M/D/YY",
+        )
 
 
 # Serve the front-end. Mounted LAST so the API routes above win;
