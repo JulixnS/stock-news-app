@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from sources.data import *
+
 
 app = FastAPI()
 
@@ -19,7 +20,13 @@ def picks(limit: int = 10):
 
 @app.get("/tickers/{ticker}/history")
 def history(ticker, limit: str |None = None):
-    return get_history(ticker, limit)
+    try:
+        return get_history(ticker, limit)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"'{limit}' is not a valid date. Use YYYY-MM-DD (eg. 2026-7-15), or M/D/YY",
+        )
 
 
 # Serve the front-end. Mounted LAST so the API routes above win;
