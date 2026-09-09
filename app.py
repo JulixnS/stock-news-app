@@ -19,13 +19,13 @@ def picks(limit: int = 10):
     return top_k_tickers(limit)
 
 @app.get("/tickers/{ticker}/history")
-def history(ticker, limit: str |None = None):
+def history(ticker, since: str | None = None):
     try:
-        return get_history(ticker, limit)
+        return get_history(ticker, since)
     except ValueError:
         raise HTTPException(
             status_code=400,
-            detail=f"'{limit}' is not a valid date. Use YYYY-MM-DD (eg. 2026-7-15), or M/D/YY",
+            detail=f"'{since}' is not a valid date. Use YYYY-MM-DD (eg. 2026-07-15), or M/D/YY",
         )
 
 

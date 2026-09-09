@@ -153,7 +153,7 @@ def top_k_tickers(k: int = 5, min_articles: int = 5):
 
 
 
-def get_history(ticker: str, limit: str):
+def get_history(ticker: str, since: str | None = None):
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
@@ -161,9 +161,9 @@ def get_history(ticker: str, limit: str):
     try:
         sql = "SELECT time, ticker, score, label, articles FROM sentiments WHERE ticker = ?"
         params = [ticker.upper()]
-        if limit:
+        if since:
             sql += " AND time >= ?"
-            params.append(_to_iso_date(limit))
+            params.append(_to_iso_date(since))
         sql += " ORDER BY time DESC"
         rows = con.execute(sql, params).fetchall()
 
