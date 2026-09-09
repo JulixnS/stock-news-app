@@ -1,6 +1,7 @@
 import os
 import sqlite3
 from datetime import datetime, timezone
+from sources.helper import _to_iso_date
 
 # Database location. Defaults to the historical relative path so nothing
 # changes for local runs; override in systemd/Docker with an absolute path.
@@ -147,4 +148,27 @@ def top_k_tickers(k: int = 5, min_articles: int = 5):
     """, (min_articles, k)).fetchall()
     con.close()
     return [dict(r) for r in res]
+
+
+
+
+
+def get_history(ticker: str, limit: str):
+    con = sqlite3.connect(DB_PATH)
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+
+    try:
+        sql = "SELECT time, ticker, score, label, articles FROM sentiments WHERE ticker = ?"
+        params = [ticker.upper()]
+        if limit:
+            sql += " AND time >= ?"
+            params.append(_to_iso_date(limit))
+        sql += " ORDER BY time DESC"
+        rows = con.execute(sql, params).fetchall()
+
+        return [dict(r) for r in rows]
+
+    finally: 
+        con.close()
 
