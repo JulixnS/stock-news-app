@@ -116,7 +116,7 @@ async function toggleDetail(row, p) {
   const isOpen = existing && existing.classList.contains("detail");
 
   // Close any open detail first (only one at a time).
-  document.querySelectorAll(".detail").forEach((d) => d.remove());
+  standings.querySelectorAll(".detail").forEach((d) => d.remove());
   document.querySelectorAll('.row[aria-expanded="true"]').forEach((r) => r.setAttribute("aria-expanded", "false"));
 
   if (isOpen && openTicker === p.ticker) { openTicker = null; return; }
