@@ -17,6 +17,10 @@ def articles(ticker: str, label: str | None = None):
 def picks(limit: int = 10):
     return top_k_tickers(limit)
 
+@app.get("/tickers/{ticker}/history")
+def history(ticker, limit: str |None = None):
+    return get_history(ticker, limit)
+
 
 # Serve the front-end. Mounted LAST so the API routes above win;
 # html=True serves frontend/index.html at "/". Same origin as the API, so no CORS.
