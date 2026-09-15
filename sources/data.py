@@ -36,6 +36,7 @@ def init_db():
                     FOREIGN KEY (sentiments_id) REFERENCES sentiments(id)
                 );
                 """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_articles_url ON articles(url)")
     
     con.commit()
     con.close()
@@ -125,6 +126,25 @@ def get_articles(ticker: str, label: str = None):
     con.close()
 
     return [dict(r) for r in res]
+
+
+
+#returns a dict of urls and their scores (from the urls in the parameter) that have already been scored, so they dont get scored again
+def get_scored(urls: list[str]) -> dict[str, tuple[str, float]]:
+    if not urls:
+        return {}  
+    con = sqlite3.connect(DB_PATH)
+    try:
+        placeholders = ",".join("?" * len(urls))  # "?,?,?" — one blank per URL; values bound below
+        rows = con.execute(
+            f"SELECT url, label, score FROM articles WHERE url IN ({placeholders})",
+            urls,
+        ).fetchall()
+    finally:
+        con.close()
+
+    return {url: (label, score) for url, label, score in rows}
+
 
 def top_k_tickers(k: int = 5, min_articles: int = 5):
     con = sqlite3.connect(DB_PATH)
