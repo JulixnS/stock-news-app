@@ -1,5 +1,6 @@
 from transformers import pipeline
 from sources.scrapers import YahooScraper, NewsScraper
+from sources.data import get_scored
 
 
 def ticker_sentiment(ticker: str, scraper: NewsScraper, finbert) -> dict:
@@ -10,16 +11,24 @@ def ticker_sentiment(ticker: str, scraper: NewsScraper, finbert) -> dict:
     sentiment = {"ticker": ticker, "articles": pages}
 
     count = 0
-    for i in range(len(pages)):
-        result = finbert(pages[i].get("title") + "." + pages[i].get("summary"), truncation=True)[0]
-        pages[i]["score"] = result["score"]
-        pages[i]["label"] = result["label"]
-        if result.get("label") == "positive":
-            count += result.get("score")
-        elif result.get("label") == "negative":
-            count -= result.get("score")
+    already_scored = get_scored([p["url"] for p in pages])
 
-    
+    for page in pages:
+        cached = already_scored.get(page["url"])   #get the url to see if it already has a score  
+        if cached:
+            label, score = cached   #if it does, keep the same label and score
+        else:    #otherwise, call the model and score it
+            result = finbert(page.get("title") + "." + page.get("summary"), truncation=True)[0]
+            score = result["score"]
+            label = result["label"]
+        if label == "positive":
+            count += score
+        elif label == "negative":
+            count -= score
+
+        page["score"] = score   #set the label and scores in the page dict
+        page["label"] = label
+
     total_score = count / len(pages)
     sentiment["score"] = total_score 
     
