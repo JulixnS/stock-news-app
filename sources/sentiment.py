@@ -2,23 +2,24 @@ from transformers import pipeline
 from sources.scrapers import YahooScraper, NewsScraper
 from sources.data import get_scored
 
+MODEL_NAME = "ProsusAI/finbert"
 
-def ticker_sentiment(ticker: str, scraper: NewsScraper, finbert) -> dict:
+def ticker_sentiment(ticker: str, scraper: NewsScraper, model) -> dict:
     pages = scraper.fetch(ticker, 100)
     if len(pages) == 0:
         return None
 
-    sentiment = {"ticker": ticker, "articles": pages}
+    sentiment = {"ticker": ticker, "articles": pages, "model": MODEL_NAME}
 
     count = 0
-    already_scored = get_scored([p["url"] for p in pages])
+    already_scored = get_scored([p["url"] for p in pages], MODEL_NAME)
 
     for page in pages:
         cached = already_scored.get(page["url"])   #get the url to see if it already has a score  
         if cached:
             label, score = cached   #if it does, keep the same label and score
         else:    #otherwise, call the model and score it
-            result = finbert(page.get("title") + "." + page.get("summary"), truncation=True)[0]
+            result = model(page.get("title") + "." + page.get("summary"), truncation=True)[0]
             score = result["score"]
             label = result["label"]
         if label == "positive":
@@ -39,7 +40,7 @@ def ticker_sentiment(ticker: str, scraper: NewsScraper, finbert) -> dict:
     else:
         sentiment["label"] = "neutral"
     
-    return sentiment   #{ticker, articles, score, label}
+    return sentiment   #{ticker, articles, score, label, model}
 
 
 if __name__ == "__main__":
