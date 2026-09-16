@@ -23,31 +23,35 @@ class YahooScraper(NewsScraper):
         pages = [] #list of news articles to be returned
         
         ticker = yf.Ticker(t)
-        news = ticker.get_news(count = n)
+        news = ticker.get_news(count = n) or []    #list of all the news articles related to the company
         try:
             longName = ticker.info.get("longName")
         except Exception:
-             longName = None
+            longName = None
+            print(f"{t}: could not get longname, searching for articles only containing {t}")
 
         # longName plus any headline-only trade names (Alphabet -> "Google").
         names = [longName, *NAME_ALIASES.get(t, [])]
 
         for article in news:
-            title = article.get("content").get("title")
+            content = article.get("content") or {} # if articles.get() returns none, just make it an empty dict
+            title = content.get("title")
 
-            if(title_contains(title, t, names)):
-                 pages.append(
-                      {"url": article.get("content").get("canonicalUrl").get("url"),
-                       "title": title,
-                       "summary": article.get("content").get("summary", "")
-                      })
+            if not title:
+                continue   #if there is no article, skip and move onto the next
+            
+            if(title_contains(title, t, names)):   #Check if the article has the company's name in it, we only want articles about that company
+                link = (content.get("canonicalUrl") or {}).get("url") #get the url of the article
+                if not link:  #if no link, skip the entry
+                    continue
+                
+                pages.append(
+                    {"url": link,
+                    "title": title,
+                    "summary": content.get("summary") or ""
+                    })
 
         return pages
-            
-            
-             
-
-
 
 
 if __name__ == "__main__":
