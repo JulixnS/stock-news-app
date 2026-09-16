@@ -2,7 +2,6 @@
 __pycache__/
 sources/__pycache__/
 .claude/
-graphify-out/
 stock-sentiment-project.md
 database_structure.md
 *.db
