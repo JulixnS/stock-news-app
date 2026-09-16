@@ -19,7 +19,8 @@ def init_db():
                     ticker TEXT NOT NULL, 
                     score REAL NOT NULL, 
                     label TEXT NOT NULL, 
-                    articles INTEGER NOT NULL
+                    articles INTEGER NOT NULL,
+                    model TEXT NOT NULL DEFAULT 'ProsusAI/finbert'
                 );
                 """)
     
@@ -33,10 +34,17 @@ def init_db():
                     label TEXT,
                     summary TEXT,
                     score REAL,
+                    model TEXT NOT NULL DEFAULT 'ProsusAI/finbert',
                     FOREIGN KEY (sentiments_id) REFERENCES sentiments(id)
                 );
                 """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_articles_url ON articles(url)")
+
+    # Add the model column to databases created before it existed
+    for table in ("sentiments", "articles"):
+        columns = [row[1] for row in cur.execute(f"PRAGMA table_info({table})")]
+        if "model" not in columns:
+            cur.execute(f"ALTER TABLE {table} ADD COLUMN model TEXT NOT NULL DEFAULT 'ProsusAI/finbert'")
     
     con.commit()
     con.close()
@@ -62,17 +70,17 @@ def store_sentiment(sentiment: dict) -> int:
     con.execute("PRAGMA foreign_keys = ON")
     cur = con.cursor()
     cur.execute("""
-        INSERT INTO sentiments(time, ticker, score, label, articles)
-        VALUES(?,?,?,?,?)""",
-        (datetime.now(timezone.utc).isoformat(), sentiment["ticker"], sentiment["score"], sentiment["label"], len(sentiment["articles"]))      
+        INSERT INTO sentiments(time, ticker, score, label, articles, model)
+        VALUES(?,?,?,?,?,?)""",
+        (datetime.now(timezone.utc).isoformat(), sentiment["ticker"], sentiment["score"], sentiment["label"], len(sentiment["articles"]), sentiment["model"])      
         )
     sentiments_id = cur.lastrowid
 
     for a in sentiment["articles"]:
         cur.execute("""
-                    INSERT INTO articles(sentiments_id, url, title, label, summary, score) 
-                    VALUES (?,?,?,?,?,?)""", 
-                    (sentiments_id, a["url"], a["title"], a["label"], a["summary"], a["score"]))
+                    INSERT INTO articles(sentiments_id, url, title, label, summary, score, model) 
+                    VALUES (?,?,?,?,?,?,?)""", 
+                    (sentiments_id, a["url"], a["title"], a["label"], a["summary"], a["score"], sentiment["model"]))
 
     con.commit()
     con.close()
@@ -130,15 +138,15 @@ def get_articles(ticker: str, label: str = None):
 
 
 #returns a dict of urls and their scores (from the urls in the parameter) that have already been scored, so they dont get scored again
-def get_scored(urls: list[str]) -> dict[str, tuple[str, float]]:
+def get_scored(urls: list[str], model) -> dict[str, tuple[str, float]]:
     if not urls:
         return {}  
     con = sqlite3.connect(DB_PATH)
     try:
         placeholders = ",".join("?" * len(urls))  # "?,?,?" — one blank per URL; values bound below
         rows = con.execute(
-            f"SELECT url, label, score FROM articles WHERE url IN ({placeholders})",
-            urls,
+            f"SELECT url, label, score FROM articles WHERE url IN ({placeholders}) AND model = ?",
+            urls + [model],
         ).fetchall()
     finally:
         con.close()
